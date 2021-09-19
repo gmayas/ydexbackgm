@@ -9,7 +9,7 @@ import UserController from './routes/user';
 const app: Application = express();
 
 // settings
-app.set('port', 5000 || process.env.PORT);
+app.set('port', process.env.PORT || 3000 );
 
 // Middlewares
 app.use(morgan('dev'));
