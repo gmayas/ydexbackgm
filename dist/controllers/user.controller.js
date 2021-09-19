@@ -241,7 +241,7 @@ exports.deleteUser = deleteUser;
 const getUserDataByIdUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id_user } = req.params;
-        let sqlString = (0, pg_format_1.default)('SELECT id_userdata, id_user_userdata, address_userdata, phone_userdata, birthdate_userdata '
+        let sqlString = (0, pg_format_1.default)('SELECT id_userdata, id_user_userdata, address_userdata, phone_userdata, birthdate_userdata, Age(birthdate_userdata) age_userdata  '
             + 'FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
         console.log('sqlString Get User data: ', sqlString);
         const response = yield database_1.default.query(sqlString);

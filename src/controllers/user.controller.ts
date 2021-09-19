@@ -206,7 +206,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<Response>
 export const getUserDataByIdUser = async (req: Request, res: Response): Promise<Response> => {
     try {
         const { id_user } =  req.params;    
-        let sqlString: string = format('SELECT id_userdata, id_user_userdata, address_userdata, phone_userdata, birthdate_userdata '
+        let sqlString: string = format('SELECT id_userdata, id_user_userdata, address_userdata, phone_userdata, birthdate_userdata, Age(birthdate_userdata) age_userdata  '
                                      + 'FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
         
         console.log('sqlString Get User data: ', sqlString)
