@@ -88,6 +88,20 @@ export const emailExists = async (email_user: string) => {
     }
 };
 
+// Id user exists
+export const userDataCount = async (id_user: any) => {
+    try {
+        const sqlString: string = format('SELECT Count (*) UsersCount FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
+        const UsersCount: QueryResult = await pool.query(sqlString);
+        const dataReturn = _.toNumber(_.get(UsersCount.rows[0], 'userscount'));
+        return { Ok: true, count: dataReturn }
+    }
+    catch (e) {
+        console.log(e);
+        return { Ok: false, count: 0 }
+    }
+};
+
 // Create user 
 export const createUser = async (req: Request, res: Response): Promise<Response> => {
     try {
@@ -99,15 +113,15 @@ export const createUser = async (req: Request, res: Response): Promise<Response>
             password_user: await encrypPassword(req.body.password_user)
         };
         // Email Validation
-        emailuserExists =  await emailExists(newUser.email_user);
+        emailuserExists = await emailExists(newUser.email_user);
         console.log('emailuserExists:', emailuserExists)
         if (emailuserExists.Ok) return res.status(400).json('Email already exists');
         // insert newUser
         sqlString = format('INSERT INTO yaydoo.users (name_user, email_user, password_user) '
             + 'VALUES %L', [[newUser.name_user, newUser.email_user, newUser.password_user]]);
         console.log('sqlString Insert: ', sqlString)
-        const savedUser: QueryResult = await pool.query(sqlString);
-        emailuserExists =  await emailExists(newUser.email_user);
+        const saveUser: QueryResult = await pool.query(sqlString);
+        emailuserExists = await emailExists(newUser.email_user);
         if (emailuserExists.Ok) { newUser.id_user = emailuserExists.id_user }
         newUser.success = true;
         return res.status(200).json(newUser);
@@ -135,7 +149,7 @@ export const createUserArray = async (req: Request, res: Response): Promise<Resp
         console.log('newValues: ', newValues);
         sqlString = format('INSERT INTO yaydoo.users (name_user, email_user, password_user) VALUES %L', newValues);
         console.log('sqlString Insert: ', sqlString)
-        const savedUser: QueryResult = await pool.query(sqlString);
+        const saveUser: QueryResult = await pool.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
             data: { Response: newValues }
@@ -153,18 +167,18 @@ export const createUserArray = async (req: Request, res: Response): Promise<Resp
 export const modifyPassword = async (req: Request, res: Response): Promise<Response> => {
     try {
         let sqlString: string;
-        const { id_user } =  req.params;     
+        const { id_user } = req.params;
         const newPassword: any = await encrypPassword(req.body.password_user);
         // Update
         sqlString = format('UPDATE yaydoo.users	SET password_user = %L WHERE id_user = %L', newPassword, id_user);
         console.log('sqlString Update: ', sqlString)
-        const savedUser: QueryResult = await pool.query(sqlString);
+        const saveUser: QueryResult = await pool.query(sqlString);
         return res.status(200).json(
-            {  
+            {
                 message: 'Query succesfully',
-                success: true, 
-                error: 'Not error'    
-              }
+                success: true,
+                error: 'Not error'
+            }
         );
     } catch (e) {
         console.log(e);
@@ -180,17 +194,27 @@ export const modifyPassword = async (req: Request, res: Response): Promise<Respo
 export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
     try {
         let sqlString: string;
-        const { id_user } =  req.params;     
-        // Delete
+        const { id_user } = req.params;
+        // Verifica si tiiene datos de usuario
+        const UsersCount = await userDataCount(id_user);
+        console.log('UsersCount:', UsersCount)
+        //{ Ok: true, count: 0 }
+        if (UsersCount.count > 0) {
+            // Elimina si tiene datos de usuario   
+            sqlString = format('DELETE FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
+            console.log('sqlString DeleteUserData: ', sqlString)
+            const delUserData: QueryResult = await pool.query(sqlString);
+        }
+        // Delete user
         sqlString = format('DELETE FROM yaydoo.users WHERE id_user = %L', id_user);
-        console.log('sqlString Delete: ', sqlString)
-        const savedUser: QueryResult = await pool.query(sqlString);
+        console.log('sqlString Delete User: ', sqlString)
+        const delUser: QueryResult = await pool.query(sqlString);
         return res.status(200).json(
-            {  
+            {
                 message: 'Query succesfully',
-                success: true, 
-                error: 'Not error'    
-              }
+                success: true,
+                error: 'Not error'
+            }
         );
     } catch (e) {
         console.log(e);
@@ -205,10 +229,10 @@ export const deleteUser = async (req: Request, res: Response): Promise<Response>
 // Get User data by id user
 export const getUserDataByIdUser = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { id_user } =  req.params;    
+        const { id_user } = req.params;
         let sqlString: string = format('SELECT id_userdata, id_user_userdata, address_userdata, phone_userdata, birthdate_userdata, Age(birthdate_userdata) age_userdata  '
-                                     + 'FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
-        
+            + 'FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
+
         console.log('sqlString Get User data: ', sqlString)
         const response: QueryResult = await pool.query(sqlString);
         return res.status(200).json({
@@ -224,21 +248,23 @@ export const getUserDataByIdUser = async (req: Request, res: Response): Promise<
     }
 };
 
+
+
 // Create user data 
 export const createUserData = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { id_user_userdata, address_userdata, phone_userdata, birthdate_userdata } = req.body;  
+        const { id_user_userdata, address_userdata, phone_userdata, birthdate_userdata } = req.body;
         // insert 
         const sqlString: string = format('INSERT INTO yaydoo.userdata(id_user_userdata, address_userdata, phone_userdata, birthdate_userdata)'
-                                       + 'VALUES %L', [[id_user_userdata, address_userdata, phone_userdata, birthdate_userdata]]);
+            + 'VALUES %L', [[id_user_userdata, address_userdata, phone_userdata, birthdate_userdata]]);
         console.log('sqlString Insert: ', sqlString)
-        const savedUser: QueryResult = await pool.query(sqlString);
+        const saveUserData: QueryResult = await pool.query(sqlString);
         return res.status(200).json(
-            {  
+            {
                 message: 'Query succesfully',
-                success: true, 
-                error: 'Not error'    
-              }
+                success: true,
+                error: 'Not error'
+            }
         );
     } catch (e) {
         console.log(e);
@@ -254,19 +280,19 @@ export const createUserData = async (req: Request, res: Response): Promise<Respo
 export const modifyUserData = async (req: Request, res: Response): Promise<Response> => {
     try {
         let sqlString: string;
-        const { id_userdata } =  req.params;   
-        const { address_userdata, phone_userdata, birthdate_userdata } = req.body;  
+        const { id_userdata } = req.params;
+        const { address_userdata, phone_userdata, birthdate_userdata } = req.body;
         // Update
         sqlString = format('UPDATE yaydoo.userdata SET address_userdata = %L, phone_userdata = %L, birthdate_userdata = %L '
-                         + 'WHERE id_userdata = %L', address_userdata, phone_userdata, birthdate_userdata , id_userdata);
+            + 'WHERE id_userdata = %L', address_userdata, phone_userdata, birthdate_userdata, id_userdata);
         console.log('sqlString Update: ', sqlString)
-        const savedUser: QueryResult = await pool.query(sqlString);
+        const saveUserData: QueryResult = await pool.query(sqlString);
         return res.status(200).json(
-            {  
+            {
                 message: 'Query succesfully',
-                success: true, 
-                error: 'Not error'    
-              }
+                success: true,
+                error: 'Not error'
+            }
         );
     } catch (e) {
         console.log(e);
@@ -282,17 +308,17 @@ export const modifyUserData = async (req: Request, res: Response): Promise<Respo
 export const deleteUserData = async (req: Request, res: Response): Promise<Response> => {
     try {
         let sqlString: string;
-        const { id_userdata } =  req.params;   
-        // Update
+        const { id_userdata } = req.params;
+        // Delete
         sqlString = format('DELETE FROM yaydoo.userdata WHERE id_userdata = %L', id_userdata);
         console.log('sqlString Delete: ', sqlString)
-        const savedUser: QueryResult = await pool.query(sqlString);
+        const delUserData: QueryResult = await pool.query(sqlString);
         return res.status(200).json(
-            {  
+            {
                 message: 'Query succesfully',
-                success: true, 
-                error: 'Not error'    
-              }
+                success: true,
+                error: 'Not error'
+            }
         );
     } catch (e) {
         console.log(e);

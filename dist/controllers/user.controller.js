@@ -31,7 +31,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserData = exports.modifyUserData = exports.createUserData = exports.getUserDataByIdUser = exports.deleteUser = exports.modifyPassword = exports.createUserArray = exports.createUser = exports.emailExists = exports.getDataUseFull = exports.getUserbyEmail = exports.getUsers = void 0;
+exports.deleteUserData = exports.modifyUserData = exports.createUserData = exports.getUserDataByIdUser = exports.deleteUser = exports.modifyPassword = exports.createUserArray = exports.createUser = exports.userDataCount = exports.emailExists = exports.getDataUseFull = exports.getUserbyEmail = exports.getUsers = void 0;
 const database_1 = __importDefault(require("./../database/database"));
 const pg_format_1 = __importDefault(require("pg-format"));
 const Validations_1 = require("./../libs/Validations");
@@ -122,6 +122,20 @@ const emailExists = (email_user) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.emailExists = emailExists;
+// Id user exists
+const userDataCount = (id_user) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const sqlString = (0, pg_format_1.default)('SELECT Count (*) UsersCount FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
+        const UsersCount = yield database_1.default.query(sqlString);
+        const dataReturn = _.toNumber(_.get(UsersCount.rows[0], 'userscount'));
+        return { Ok: true, count: dataReturn };
+    }
+    catch (e) {
+        console.log(e);
+        return { Ok: false, count: 0 };
+    }
+});
+exports.userDataCount = userDataCount;
 // Create user 
 const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -141,7 +155,7 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         sqlString = (0, pg_format_1.default)('INSERT INTO yaydoo.users (name_user, email_user, password_user) '
             + 'VALUES %L', [[newUser.name_user, newUser.email_user, newUser.password_user]]);
         console.log('sqlString Insert: ', sqlString);
-        const savedUser = yield database_1.default.query(sqlString);
+        const saveUser = yield database_1.default.query(sqlString);
         emailuserExists = yield (0, exports.emailExists)(newUser.email_user);
         if (emailuserExists.Ok) {
             newUser.id_user = emailuserExists.id_user;
@@ -171,7 +185,7 @@ const createUserArray = (req, res) => __awaiter(void 0, void 0, void 0, function
         console.log('newValues: ', newValues);
         sqlString = (0, pg_format_1.default)('INSERT INTO yaydoo.users (name_user, email_user, password_user) VALUES %L', newValues);
         console.log('sqlString Insert: ', sqlString);
-        const savedUser = yield database_1.default.query(sqlString);
+        const saveUser = yield database_1.default.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
             data: { Response: newValues }
@@ -195,7 +209,7 @@ const modifyPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         // Update
         sqlString = (0, pg_format_1.default)('UPDATE yaydoo.users	SET password_user = %L WHERE id_user = %L', newPassword, id_user);
         console.log('sqlString Update: ', sqlString);
-        const savedUser = yield database_1.default.query(sqlString);
+        const saveUser = yield database_1.default.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
             success: true,
@@ -217,10 +231,20 @@ const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         let sqlString;
         const { id_user } = req.params;
-        // Delete
+        // Verifica si tiiene datos de usuario
+        const UsersCount = yield (0, exports.userDataCount)(id_user);
+        console.log('UsersCount:', UsersCount);
+        //{ Ok: true, count: 0 }
+        if (UsersCount.count > 0) {
+            // Elimina si tiene datos de usuario   
+            sqlString = (0, pg_format_1.default)('DELETE FROM yaydoo.userdata WHERE id_user_userdata = %L', id_user);
+            console.log('sqlString DeleteUserData: ', sqlString);
+            const delUserData = yield database_1.default.query(sqlString);
+        }
+        // Delete user
         sqlString = (0, pg_format_1.default)('DELETE FROM yaydoo.users WHERE id_user = %L', id_user);
-        console.log('sqlString Delete: ', sqlString);
-        const savedUser = yield database_1.default.query(sqlString);
+        console.log('sqlString Delete User: ', sqlString);
+        const delUser = yield database_1.default.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
             success: true,
@@ -267,7 +291,7 @@ const createUserData = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const sqlString = (0, pg_format_1.default)('INSERT INTO yaydoo.userdata(id_user_userdata, address_userdata, phone_userdata, birthdate_userdata)'
             + 'VALUES %L', [[id_user_userdata, address_userdata, phone_userdata, birthdate_userdata]]);
         console.log('sqlString Insert: ', sqlString);
-        const savedUser = yield database_1.default.query(sqlString);
+        const saveUserData = yield database_1.default.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
             success: true,
@@ -294,7 +318,7 @@ const modifyUserData = (req, res) => __awaiter(void 0, void 0, void 0, function*
         sqlString = (0, pg_format_1.default)('UPDATE yaydoo.userdata SET address_userdata = %L, phone_userdata = %L, birthdate_userdata = %L '
             + 'WHERE id_userdata = %L', address_userdata, phone_userdata, birthdate_userdata, id_userdata);
         console.log('sqlString Update: ', sqlString);
-        const savedUser = yield database_1.default.query(sqlString);
+        const saveUserData = yield database_1.default.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
             success: true,
@@ -316,10 +340,10 @@ const deleteUserData = (req, res) => __awaiter(void 0, void 0, void 0, function*
     try {
         let sqlString;
         const { id_userdata } = req.params;
-        // Update
+        // Delete
         sqlString = (0, pg_format_1.default)('DELETE FROM yaydoo.userdata WHERE id_userdata = %L', id_userdata);
         console.log('sqlString Delete: ', sqlString);
-        const savedUser = yield database_1.default.query(sqlString);
+        const delUserData = yield database_1.default.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
             success: true,
