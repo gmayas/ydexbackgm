@@ -16,7 +16,7 @@ format(fmt, ...)
 // Get all users
 export const getUsers = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const sqlString: string = format('SELECT id_user, name_user, email_user, password_user FROM %s Order by id_user', 'yaydoo.users');
+        const sqlString: string = format('SELECT id_user, name_user, email_user, password_user FROM %s Order by id_user DESC', 'yaydoo.users');
         const response: QueryResult = await pool.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',

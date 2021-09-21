@@ -46,7 +46,7 @@ format(fmt, ...)
 // Get all users
 const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const sqlString = (0, pg_format_1.default)('SELECT id_user, name_user, email_user, password_user FROM %s Order by id_user', 'yaydoo.users');
+        const sqlString = (0, pg_format_1.default)('SELECT id_user, name_user, email_user, password_user FROM %s Order by id_user DESC', 'yaydoo.users');
         const response = yield database_1.default.query(sqlString);
         return res.status(200).json({
             message: 'Query succesfully',
