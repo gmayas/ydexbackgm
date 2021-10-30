@@ -66,3 +66,27 @@ SELECT id_userdata, id_user_userdata, address_userdata, phone_userdata,
        birthdate_userdata, Age(birthdate_userdata) age_userdata 
 	FROM yaydoo.userdata
 	Where id_user_userdata = '1';
+
+-- Table: yaydoo.datajson
+
+-- DROP TABLE yaydoo.datajson;
+
+CREATE TABLE IF NOT EXISTS yaydoo.datajson
+(
+    id integer NOT NULL DEFAULT nextval('yaydoo.datajson_id_seq'::regclass),
+    array_json json,
+    CONSTRAINT datajson_pkey PRIMARY KEY (id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE yaydoo.datajson
+    OWNER to aovudieocshokj;
+
+GRANT ALL ON TABLE yaydoo.datajson TO aovudieocshokj WITH GRANT OPTION;
+
+GRANT ALL ON TABLE yaydoo.datajson TO PUBLIC;
+
+INSERT INTO person VALUES ('{"pid": 101, "name": "name1"}');
+
+SELECT id, array_json FROM yaydoo.datajson Where id= 36;
