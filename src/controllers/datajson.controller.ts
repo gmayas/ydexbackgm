@@ -25,7 +25,6 @@ export const getDataJsonbyId = async (req: Request, res: Response): Promise<Resp
 //
 export const createDataJson = async (req: Request, res: Response): Promise<Response> => {
     try {
-        
         const { array_json }: any = req.body;
         const data = JSON.stringify(array_json)
         const sqlString = `INSERT INTO yaydoo.datajson (array_json) VALUES ('${data}')`;
